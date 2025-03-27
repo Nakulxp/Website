@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tamil Letter Tracing</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        @font-face {
+            font-family: 'Bogart Alt';
+            src: local('Bogart Alt');
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: white;
+            min-height: 100vh;
+        }
+        
+        .header {
+            text-align: center;
+            margin: 40px 0 20px;
+        }
+        
+        h1 {
+            color: #000;
+            font-size: 48px;
+            margin: 0;
+            font-weight: 600;
+            font-family: 'Bogart Alt', sans-serif;
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            color: #333;
+            margin: 10px 0 30px;
+        }
+        
+        .letter-selection {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+            max-width: 800px;
+            padding: 0 20px;
+        }
+        
+        .letter-btn {
+            width: 120px;
+            height: 120px;
+            font-size: 48px;
+            background-color: #f8f8f8;
+            color: #000;
+            border: 1px solid #eee;
+            border-radius: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .letter-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .letter-btn.selected {
+            background-color: #fff;
+            border: 2px solid #d4a373;
+            color: #d4a373;
+            box-shadow: 0 0 20px rgba(212, 163, 115, 0.3);
+        }
+        
+        .tracing-area {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            padding: 20px;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            margin: 20px 0;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            background-color: white;
+        }
+        
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        #letterCanvas {
+            z-index: 1;
+            opacity: 0.3;
+        }
+        
+        #drawingCanvas {
+            z-index: 2;
+        }
+        
+        .clear-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            background-color: white;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 3;
+        }
+        
+        .clear-btn::before,
+        .clear-btn::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 2px;
+            background-color: #ff0000;
+        }
+        
+        .clear-btn::before {
+            transform: rotate(45deg);
+        }
+        
+        .clear-btn::after {
+            transform: rotate(-45deg);
+        }
+        
+        .tick-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background-color: white;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            z-index: 3;
+        }
+        
+        .tick-btn::before {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 20px;
+            border-right: 3px solid #4CAF50;
+            border-bottom: 3px solid #4CAF50;
+            transform: rotate(45deg) translate(-1px, -4px);
+        }
+        
+        .progress-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0%;
+            height: 100%;
+            background: radial-gradient(circle at center, rgba(255, 215, 0, 0.3) 0%, rgba(255, 165, 0, 0.1) 70%, rgba(255, 165, 0, 0) 100%);
+            transition: width 0.3s ease;
+        }
+        
+        .reveal-title {
+            font-size: 36px;
+            margin-bottom: 30px;
+            text-align: center;
+            font-family: 'Bogart Alt', sans-serif;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+        }
+        
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: white;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: #333;
+            display: flex;
+            align-items: center;
+            padding: 12px 24px;
+            border-radius: 50px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-family: 'MyCustomFont', sans-serif;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn::before {
+            content: '←';
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+        .back-btn:hover {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Select a letter</h1>
+        <div class="subtitle">ஒரு கடிதத்தைத் தேர்ந்தெடுக்கவும்</div>
+    </div>
+    
+    <div id="letterSelection" class="letter-selection">
+        <!-- Tamil letters will be added here via JavaScript -->
+    </div>
+    
+    <div id="tracingArea" class="tracing-area">
+        <div class="reveal-title">Reveal the meaning</div>
+        
+        <div class="canvas-container">
+            <canvas id="letterCanvas" width="500" height="500"></canvas>
+            <canvas id="drawingCanvas" width="500" height="500"></canvas>
+            <div id="clearBtn" class="clear-btn"></div>
+            <div id="tickBtn" class="tick-btn"></div>
+            <div class="progress-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        Project by Nakul & Hema
+    </div>
+    
+    <script>
+        // First 10 Tamil letters with their meanings
+        const tamilLetters = [
+            { letter: 'அ', meaning: 'A - The first vowel in Tamil', pronunciation: 'a' },
+            { letter: 'ஆ', meaning: 'Aa - The second vowel in Tamil', pronunciation: 'aa' },
+            { letter: 'இ', meaning: 'E - The third vowel in Tamil', pronunciation: 'i' },
+            { letter: 'ஈ', meaning: 'Ee - The fourth vowel in Tamil', pronunciation: 'ee' },
+            { letter: 'உ', meaning: 'U - The fifth vowel in Tamil', pronunciation: 'u' },
+            { letter: 'ஊ', meaning: 'Oo - The sixth vowel in Tamil', pronunciation: 'oo' },
+            { letter: 'எ', meaning: 'E - The seventh vowel in Tamil', pronunciation: 'e' },
+            { letter: 'ஏ', meaning: 'Ae - The eighth vowel in Tamil', pronunciation: 'ae' },
+            { letter: 'ஐ', meaning: 'Ai - The ninth vowel in Tamil', pronunciation: 'ai' },
+            { letter: 'ஒ', meaning: 'O - The tenth vowel in Tamil', pronunciation: 'o' }
+        ];
+        
+        // DOM elements
+        const letterSelection = document.getElementById('letterSelection');
+        const tracingArea = document.getElementById('tracingArea');
+        const letterCanvas = document.getElementById('letterCanvas');
+        const drawingCanvas = document.getElementById('drawingCanvas');
+        const clearBtn = document.getElementById('clearBtn');
+        const tickBtn = document.getElementById('tickBtn');
+        const progressBar = document.getElementById('progressBar');
+        
+        // Canvas contexts
+        const letterCtx = letterCanvas.getContext('2d');
+        const drawingCtx = drawingCanvas.getContext('2d');
+        
+        // Current selected letter
+        let selectedLetter = null;
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let progress = 0;
+        let tracingStarted = false;
+        let meaningWindowOpened = false; // Track if meaning window is already open
+        let pixelsDrawn = 0; // Track how many pixels have been drawn
+        let totalPixelsNeeded = 1000; // Approximate pixels needed to complete
+        
+        // Initialize the application
+        function init() {
+            // Create letter selection buttons
+            tamilLetters.forEach(letterObj => {
+                const btn = document.createElement('button');
+                btn.className = 'letter-btn';
+                btn.textContent = letterObj.letter;
+                btn.addEventListener('click', () => selectLetter(letterObj, btn));
+                letterSelection.appendChild(btn);
+            });
+            
+            // Set up drawing canvas events
+            drawingCanvas.addEventListener('mousedown', startDrawing);
+            drawingCanvas.addEventListener('mousemove', draw);
+            drawingCanvas.addEventListener('mouseup', stopDrawing);
+            drawingCanvas.addEventListener('mouseout', stopDrawing);
+            
+            // Touch events for mobile
+            drawingCanvas.addEventListener('touchstart', handleTouch);
+            drawingCanvas.addEventListener('touchmove', handleTouch);
+            drawingCanvas.addEventListener('touchend', stopDrawing);
+            
+            // Button events
+            clearBtn.addEventListener('click', clearDrawing);
+            tickBtn.addEventListener('click', completeTracing);
+            
+            // Add back button to tracing area
+            const backBtn = document.createElement('button');
+            backBtn.className = 'back-btn';
+            backBtn.textContent = 'Back';
+            backBtn.addEventListener('click', goBackToSelection);
+            tracingArea.prepend(backBtn);
+        }
+        
+        // Select a letter to trace
+        function selectLetter(letterObj, btn) {
+            // Remove selected class from all buttons
+            document.querySelectorAll('.letter-btn').forEach(button => {
+                button.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked button
+            btn.classList.add('selected');
+            
+            selectedLetter = letterObj;
+            
+            // Show tracing area and hide letter selection
+            letterSelection.style.display = 'none';
+            tracingArea.style.display = 'flex';
+            
+            // Hide the header when moving to tracing area
+            document.querySelector('.header').style.display = 'none';
+            
+            // Draw the letter on the canvas
+            drawLetterOnCanvas(letterObj);
+            clearDrawing();
+            
+            // Reset progress and window tracking
+            progress = 0;
+            pixelsDrawn = 0;
+            progressBar.style.width = '0%';
+            tracingStarted = false;
+            meaningWindowOpened = false; // Reset window tracking
+            clearBtn.style.display = 'none';
+            tickBtn.style.display = 'none';
+        }
+        
+        // Draw the selected letter on the canvas
+        function drawLetterOnCanvas(letterObj) {
+            letterCtx.clearRect(0, 0, letterCanvas.width, letterCanvas.height);
+            letterCtx.font = '300px Arial';
+            letterCtx.fillStyle = 'lightgray';
+            letterCtx.textAlign = 'center';
+            letterCtx.textBaseline = 'middle';
+            letterCtx.fillText(letterObj.letter, letterCanvas.width / 2, letterCanvas.height / 2);
+        }
+        
+        // Start drawing
+        function startDrawing(e) {
+            isDrawing = true;
+            const { offsetX, offsetY } = getCoordinates(e);
+            lastX = offsetX;
+            lastY = offsetY;
+            
+            if (!tracingStarted) {
+                tracingStarted = true;
+                clearBtn.style.display = 'flex';
+                tickBtn.style.display = 'flex';
+            }
+        }
+        
+        // Draw on the canvas
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const { offsetX, offsetY } = getCoordinates(e);
+            
+            // Calculate distance drawn
+            const distance = Math.sqrt(
+                Math.pow(offsetX - lastX, 2) + 
+                Math.pow(offsetY - lastY, 2)
+            );
+            
+            // Only update pixels drawn if actually moving (not just clicking)
+            if (distance > 0) {
+                pixelsDrawn += distance;
+            }
+            
+            drawingCtx.lineWidth = 6; // 6 pixels as requested
+            drawingCtx.lineCap = 'round';
+            drawingCtx.strokeStyle = 'black';
+            
+            drawingCtx.beginPath();
+            drawingCtx.moveTo(lastX, lastY);
+            drawingCtx.lineTo(offsetX, offsetY);
+            drawingCtx.stroke();
+            
+            lastX = offsetX;
+            lastY = offsetY;
+            
+            // Update progress
+            updateProgress();
+        }
+        
+        // Update progress bar
+        function updateProgress() {
+            // Calculate progress based on pixels drawn
+            progress = Math.min((pixelsDrawn / totalPixelsNeeded) * 100, 100);
+            progressBar.style.width = `${progress}%`;
+            
+            // If progress is complete and no window is open yet, show meaning
+            if (progress >= 100 && !meaningWindowOpened) {
+                meaningWindowOpened = true; // Set flag to prevent multiple windows
+                setTimeout(() => {
+                    showMeaning();
+                }, 500);
+            }
+        }
+        
+        // Complete tracing and show meaning
+        function completeTracing() {
+            if (!selectedLetter || meaningWindowOpened) return;
+            
+            // Set progress to 100% to show completion
+            progress = 100;
+            progressBar.style.width = '100%';
+            
+            // Show meaning after a short delay
+            meaningWindowOpened = true;
+            setTimeout(() => {
+                showMeaning();
+            }, 500);
+        }
+
+        // Handle touch events
+        function handleTouch(e) {
+            e.preventDefault();
+            
+            if (e.type === 'touchstart') {
+                startDrawing(e.touches[0]);
+            } else if (e.type === 'touchmove') {
+                draw(e.touches[0]);
+            }
+        }
+        
+        // Get coordinates for both mouse and touch events
+        function getCoordinates(e) {
+            if (e.clientX) {
+                const rect = drawingCanvas.getBoundingClientRect();
+                return {
+                    offsetX: e.clientX - rect.left,
+                    offsetY: e.clientY - rect.top
+                };
+            } else {
+                return {
+                    offsetX: e.offsetX,
+                    offsetY: e.offsetY
+                };
+            }
+        }
+        
+        // Stop drawing
+        function stopDrawing() {
+            isDrawing = false;
+        }
+        
+        // Clear the drawing canvas
+        function clearDrawing() {
+            drawingCtx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height);
+            progress = 0;
+            pixelsDrawn = 0;
+            progressBar.style.width = '0%';
+        }
+        
+        // Show the meaning and animation in a new tab
+        function showMeaning() {
+            if (!selectedLetter) return;
+            
+            // Create a new window/tab
+            const newWindow = window.open('', '_blank');
+            
+            // Different content for the first letter (அ)
+            if (selectedLetter.letter === 'அ') {
+                const content = `
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>Tamil Letter: ${selectedLetter.letter}</title>
+                        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+                        <style>
+                            @font-face {
+                                font-family: 'MyCustomFont';
+                                src: local('Bogart Alt');
+                            }
+                            
+                            body {
+                                margin: 0;
+                                padding: 0;
+                                overflow: hidden;
+                                background-color: black;
+                                height: 100vh;
+                                width: 100vw;
+                                position: relative;
+                            }
+                            
+                            .video-container {
+                                width: 100%;
+                                height: 100%;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                            }
+                            
+                            video {
+                                width: 100%;
+                                height: 100%;
+                                object-fit: contain;
+                            }
+                            
+                            .back-to-letters {
+                                position: absolute;
+                                bottom: 40px;
+                                right: 40px;
+                                padding: 12px 24px;
+                                background-color: white;
+                                border: none;
+                                border-radius: 50px;
+                                font-family: 'MyCustomFont', sans-serif;
+                                font-size: 16px;
+                                cursor: pointer;
+                                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                                text-decoration: none;
+                                color: black;
+                                z-index: 10;
+                                display: flex;
+                                align-items: center;
+                            }
+                            
+                            .back-to-letters::before {
+                                content: '←';
+                                margin-right: 10px;
+                                font-size: 20px;
+                            }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="video-container">
+                                <video autoplay controls>
+                                    <source src="361721285945102339.mp4" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                            <a href="#" class="back-to-letters" onclick="window.close(); return false;">Back to Letters</a>
+                        </body>
+                        </html>
+                `;
+                
+                newWindow.document.write(content);
+                newWindow.document.close();
+            } else {
+                // Original content for other letters
+                const content = `
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <meta charset="UTF-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                        <title>Tamil Letter: ${selectedLetter.letter}</title>
+                        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+                        <style>
+                            @font-face {
+                                font-family: 'MyCustomFont';
+                                src: local('Bogart Alt');
+                            }
+                            
+                            body {
+                                font-family: 'Poppins', sans-serif;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                justify-content: center;
+                                height: 100vh;
+                                margin: 0;
+                                background-color: white;
+                                position: relative;
+                            }
+                            
+                            .letter-display {
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                                justify-content: center;
+                                width: 100%;
+                                max-width: 800px;
+                                height: 80vh;
+                                position: relative;
+                                background-color: #f9f9f9;
+                                border-radius: 20px;
+                                box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+                                padding: 40px;
+                                text-align: center;
+                            }
+                            
+                            .letter-quote {
+                                font-size: 36px;
+                                font-family: 'MyCustomFont', sans-serif;
+                                margin-bottom: 20px;
+                            }
+                            
+                            .tamil-letter {
+                                font-size: 120px;
+                                margin: 30px 0;
+                                color: #333;
+                                opacity: 0.2;
+                            }
+                            
+                            .quote-text {
+                                font-size: 28px;
+                                line-height: 1.5;
+                                margin-bottom: 30px;
+                            }
+                            
+                            .tamil-translation {
+                                font-size: 20px;
+                                color: #666;
+                                margin-bottom: 40px;
+                            }
+                            
+                            .back-to-letters {
+                                position: absolute;
+                                bottom: 40px;
+                                right: 40px;
+                                padding: 10px 20px;
+                                background-color: white;
+                                border: 1px solid #ccc;
+                                border-radius: 30px;
+                                font-family: 'MyCustomFont', sans-serif;
+                                font-size: 16px;
+                                cursor: pointer;
+                                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                                text-decoration: none;
+                                color: black;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="letter-display">
+                            <div class="tamil-letter">${selectedLetter.letter}</div>
+                            <div class="letter-quote">Have desire to do good deeds</div>
+                            <div class="tamil-translation">அறம் செய விரும்பு</div>
+                            <a href="#" class="back-to-letters" onclick="window.close(); return false;">Back to Letters</a>
+                        </div>
+                    </body>
+                    </html>
+                `;
+                
+                newWindow.document.write(content);
+                newWindow.document.close();
+            }
+            
+            // Listen for window close to reset the flag
+            newWindow.addEventListener('beforeunload', function() {
+                setTimeout(() => {
+                    meaningWindowOpened = false;
+                }, 100);
+            });
+        }
+        
+        // Go back to letter selection
+        function goBackToSelection() {
+            tracingArea.style.display = 'none';
+            letterSelection.style.display = 'grid';
+            
+            // Show the header again when returning to letter selection
+            document.querySelector('.header').style.display = 'block';
+            
+            // Remove selected class from all buttons
+            document.querySelectorAll('.letter-btn').forEach(button => {
+                button.classList.remove('selected');
+            });
+            
+            selectedLetter = null;
+            meaningWindowOpened = false; // Reset window tracking
+        }
+        
+        // Initialize the app when the page loads
+        window.onload = init;
+    </script>
+</body>
+</html>
